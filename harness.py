@@ -616,9 +616,15 @@ async def solve(session: taskbridge.Session) -> str:
         f"invalid={report.get('invalid')}"
     )
 
-    blocked = "402" in (run.error or "") or "credits" in (
-        run.error or ""
-    ).lower()
+    error_text = (run.error or "").lower()
+    in_flight = (
+        "in_flight" in error_text
+        or "in-flight" in error_text
+        or "in flight" in error_text
+    )
+    blocked = (
+        ("402" in error_text or "credits" in error_text) and not in_flight
+    )
     if blocked:
       await session.log(
           "harness: model credit/auth error; skipping model phases and using the "
@@ -628,8 +634,14 @@ async def solve(session: taskbridge.Session) -> str:
     # A reply without a tool call ends Pi. If the model sent a progress note or
     # stopped mid-thought, continue the work before spending time on audit.
     for round_no in range(1, 3):
-      if blocked or not (progress_note(final) and missing_count(report) > 0):
+      resume = progress_note(final) or in_flight
+      if blocked or not (resume and missing_count(report) > 0):
         break
+      if in_flight:
+        await session.log(
+            "harness: in-flight budget exhausted; waiting 120 s before resuming"
+        )
+        await asyncio.sleep(120)
       left = session.time_left()
       if left is not None and left < 1800:
         break
@@ -738,18 +750,45 @@ async def solve(session: taskbridge.Session) -> str:
     # Last-resort deterministic scaffold: a draft at every still-missing path.
     left = session.time_left()
     if missing_count(report) > 0 and (left is None or left > 30):
-      await run_script(
-          session,
-          "scaffold.py",
-          [session.workdir, f"{SCRATCH}/deliverables.json", SCRATCH],
-          120,
-      )
-      report = await check(session, deliverables)
-      await session.log(
-          f"harness: scaffold check ok={report.get('ok')} "
-          f"missing={report.get('missing')} empty={report.get('empty')} "
-          f"invalid={report.get('invalid')}"
-      )
+      for attempt in range(2):
+        if attempt == 0:
+          # Remove only files that cannot be repaired in place: empty files and
+          # invalid archives. A valid archive with missing members is appended.
+          bad = [
+              str(item.get("path"))
+              for item in report.get("deliverables", []) or []
+              if item.get("kind") != "dir"
+              and item.get("path")
+              and (
+                  item.get("status") == "empty"
+                  or (
+                      item.get("status") == "invalid"
+                      and not item.get("entry_count")
+                  )
+              )
+          ]
+          if bad:
+            with contextlib.suppress(Exception):
+              await session.exec(
+                  "rm -f " + " ".join(shlex.quote(p) for p in bad[:20]),
+                  timeout_sec=30,
+              )
+          await asyncio.sleep(5)
+        await run_script(
+            session,
+            "scaffold.py",
+            [session.workdir, f"{SCRATCH}/deliverables.json", SCRATCH],
+            120,
+        )
+        report = await check(session, deliverables)
+        await session.log(
+            f"harness: scaffold {attempt + 1} ok={report.get('ok')} "
+            f"missing={report.get('missing')} empty={report.get('empty')} "
+            f"invalid={report.get('invalid')}"
+        )
+        if missing_count(report) == 0:
+          break
+        await asyncio.sleep(10)
 
     return triage.build_final_message(final, report, deliverables)
   except taskbridge.Cancelled:
