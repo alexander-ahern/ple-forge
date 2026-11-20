@@ -1,43 +1,56 @@
 {
   "format": 1,
   "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
-  "created": "2026-11-20T20:04:32Z",
+  "created": "2026-11-20T22:02:50Z",
   "harness": {
     "name": "ple-forge",
     "model_api": "google-cloud/claude-opus-5-5",
-    "tree": "579c4a1a307e134f24c0f1d2c8d90a117abcc0fa4db2d8771e898665463d435b",
+    "tree": "bb5d3c0919258804d61dc99dea7fa4c48dd58bada5461fff3bd5ee0bd1af16cb",
     "files": {
-      ".gitignore": "100755 42d6ecb1e3211e1dd0517ecbc9f7e8ef634547c2",
-      "AGENTS.md": "100755 25352486aa25e3f5398a58a2e26f08c572ab1087",
-      "LICENSE": "100755 261eeb9e9f8b2b4b0d119366dda99c6fd7d35c64",
-      "README.md": "100755 3b3084af1580ff52fd02ddfe6869fd4c25007d53",
-      "check_task.py": "100755 b93d7974cf86f8bc302179929923b258637e3e38",
-      "harness.py": "100755 bd28c776f8f5dc579d9a2f5a65968a43f3a6abbc",
-      "package-lock.json": "100755 5dba6d2880e4966fca650af70db1c7345d14d20b",
-      "package.json": "100755 701346d5e2e0f3fe4eee265d535319c0b8f634c5",
-      "preflight_task.py": "100755 485548afcf8ce5fa08891b098be963ab3d574bc3",
-      "requirements.txt": "100755 7bc03d775075fc452cc88d8aa6292087dd8eec65",
-      "serve.py": "100755 a0b209c2c38dc8204a48d1eb9e48b123f646707f",
-      "submission.yaml": "100755 5f00210e0fab87bc77242eb4a1e16e6f37a87808",
-      "task-tools.ts": "100755 f0f8e7043d3d4c56e8c473b6af0686145706811b",
-      "taskbridge.py": "100755 87b326ab2e055f877d6d08468711c1f992e61cc6",
-      "triage.py": "100755 5b6b71fa25183222af103ce76711cc559aa34e83"
+      ".gitignore": "100644 42d6ecb1e3211e1dd0517ecbc9f7e8ef634547c2",
+      "AGENTS.md": "100644 25352486aa25e3f5398a58a2e26f08c572ab1087",
+      "LICENSE": "100644 261eeb9e9f8b2b4b0d119366dda99c6fd7d35c64",
+      "README.md": "100644 3b3084af1580ff52fd02ddfe6869fd4c25007d53",
+      "check_task.py": "100644 e0e2270108ac958008daf645a88d747f54b0ef78",
+      "harness.py": "100644 c2011f078c9fd46b59de990e6a26ccdf4ac6b836",
+      "package-lock.json": "100644 5dba6d2880e4966fca650af70db1c7345d14d20b",
+      "package.json": "100644 701346d5e2e0f3fe4eee265d535319c0b8f634c5",
+      "preflight_task.py": "100644 f6bf4734021a9b2959f217d0618087b426472995",
+      "requirements.txt": "100644 7bc03d775075fc452cc88d8aa6292087dd8eec65",
+      "scaffold.py": "100644 823e22d5d1ff39083f99fb9a1c6f53df0fc075e2",
+      "serve.py": "100644 a0b209c2c38dc8204a48d1eb9e48b123f646707f",
+      "submission.yaml": "100644 5f00210e0fab87bc77242eb4a1e16e6f37a87808",
+      "task-tools.ts": "100644 f0f8e7043d3d4c56e8c473b6af0686145706811b",
+      "taskbridge.py": "100644 87b326ab2e055f877d6d08468711c1f992e61cc6",
+      "triage.py": "100644 beadd97f1f4e80866e6caf33857e34916f9fd7dc"
     },
-    "commit": "ec601d2874628a7589a025a6bb5ac1b2e412b2ce",
-    "dirty": true
+    "commit": "cedff13d44342e4e7f8c217b50185a756b4f6b34",
+    "dirty": false
   },
   "tasks": {
     "data-center-site-model": {
+      "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
       "run": "ple-forge-20261120-135330",
       "trial": "data-center-site-model__HUmhacb",
       "ended": "ok",
       "reward": 1.0,
       "tree": "579c4a1a307e134f24c0f1d2c8d90a117abcc0fa4db2d8771e898665463d435b",
-      "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
       "files": {
         "app/files/frontier__DCBim__p6_002/submission/model.ifc": "049ad3858df5a6eec3a5d54934cca4c827472482"
       },
       "final_message": "0c315ae79d1d2352f08d38c6d82e9cd06fef211d",
+      "deleted": [],
+      "skipped": []
+    },
+    "foundation-strategy": {
+      "run": "ple-forge-20261120-160017",
+      "trial": "foundation-strategy__uhsLQU8",
+      "ended": "ok",
+      "reward": 0.0,
+      "tree": "bb5d3c0919258804d61dc99dea7fa4c48dd58bada5461fff3bd5ee0bd1af16cb",
+      "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
+      "files": {},
+      "final_message": "2714f28a6e8cdb73e0490fd246421b89a197feff",
       "deleted": [],
       "skipped": []
     }

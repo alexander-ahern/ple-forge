@@ -43,6 +43,7 @@ import shlex
 import shutil
 import subprocess
 import tempfile
+import traceback
 from typing import Any
 
 import taskbridge
@@ -676,11 +677,12 @@ async def solve(session: taskbridge.Session) -> str:
   except taskbridge.Cancelled:
     raise
   except Exception as exc:  # noqa: BLE001 - the task must still end with done
+    detail = traceback.format_exc()
     with contextlib.suppress(Exception):
-      await session.log(f"harness: error {type(exc).__name__}: {exc}")
+      await session.log(f"harness: error {type(exc).__name__}: {detail[-4000:]}")
     if session.final_message.strip():
       return session.final_message.strip()
-    return f"Harness error: {type(exc).__name__}: {exc}"
+    return f"Harness error: {type(exc).__name__}: {exc}\n\n{detail[-2000:]}"
 
 
 if __name__ == "__main__":

@@ -512,7 +512,8 @@ def build_brief(
     lines.append("| Path | Size | Kind | First line |")
     lines.append("|---|---|---|---|")
     for item in key_files[:40]:
-        head = str(item.get("head", "")).splitlines()[0][:140].replace("|", "\\|")
+        head_lines = str(item.get("head", "")).splitlines()
+        head = (head_lines[0] if head_lines else "")[:140].replace("|", "\\|")
         lines.append(
             f"| `{item.get('path')}` | {_fmt_size(int(item.get('size', 0)))} | "
             f"{item.get('kind')} | {head} |"
