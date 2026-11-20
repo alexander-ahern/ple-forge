@@ -39,6 +39,7 @@ import contextlib
 import json
 import os
 import pathlib
+import re
 import shlex
 import shutil
 import subprocess
@@ -81,7 +82,8 @@ Work in this order:
 5. For geometry/CAD/BIM, check clashes, containment, clearances, connectivity, and the project coordinate system. For code, run it and check its output. For archives, list the contents. For documents, include every requested section.
 6. Before finishing, open every deliverable and verify its exact path, format, and required content.
 7. If a deliverable is an archive, create it with every required member at the stated root early, then replace member contents in place. If the task asks for a document in a document store or a case-tracking update, use the MCP tools.
-When done, reply with a concise summary of each deliverable, its exact path, and the key results."""
+
+A reply without a tool call ends the task. Do not send progress notes, next-step notes, or partial thoughts. Only reply when every deliverable exists and has been checked; then give a concise summary of each deliverable, its exact path, and the key results."""
 
 AUDITOR = """You are an independent senior engineer auditing a colleague's work on a task in a Linux container. You may inspect files and run read-only commands; do not modify any file. The task instruction and the colleague's summary are below. The harness brief is at {scratch}/BRIEF.md.
 
@@ -91,9 +93,13 @@ Report only material gaps as a numbered list, each with severity (BLOCKER/MAJOR/
 
 FIXER = """You are an expert engineer fixing a colleague's task in a Linux container. The harness brief is at {scratch}/BRIEF.md; the task instruction, the current summary, and an independent reviewer's findings are below.
 
-Fix only the material gaps. Preserve correct work; do not rewrite files that already pass. Re-open every deliverable after editing and re-run the relevant calculation. Create any missing deliverable path. When done, reply with an updated concise summary of each deliverable, its exact path, and the key results."""
+Fix only the material gaps. Preserve correct work; do not rewrite files that already pass. Re-open every deliverable after editing and re-run the relevant calculation. Create any missing deliverable path. Do not send progress notes: a reply without a tool call ends the task. When every gap is fixed, reply with an updated concise summary of each deliverable, its exact path, and the key results."""
 
 CLOSER = """You are an expert engineer working against a hard deadline in a Linux container. The task instruction and a deterministic check are below. The check shows missing, empty, or invalid deliverables. Write the best possible version of each one now using the data already in the workspace. Do not analyze further or explore. Create every missing path first, then fill it with the best content you can. Reply with one short paragraph naming each file and its status."""
+
+CONTINUATION = """You are continuing an engineering task in a Linux container. The previous turn ended before the work was complete. Your tools act inside it, and bash starts in {workdir}. Read {scratch}/BRIEF.md and {scratch}/plan.md, then inspect the current workspace.
+
+Finish every required deliverable. Important: a reply without a tool call ends the task. Do not send progress notes, next-step notes, or partial thoughts. Keep calling tools until every deliverable is written and verified, then reply with a concise summary of each deliverable, its exact path, and the key results."""
 
 
 def model_limits() -> dict[str, Any]:
@@ -370,6 +376,7 @@ async def check(
           "path": item["path"],
           "kind": item.get("kind", "file"),
           "members": item.get("members", []),
+          "changed_only": item.get("changed_only", False),
       }
       for item in deliverables
   ]
@@ -527,6 +534,23 @@ def missing_count(report: dict[str, Any]) -> int:
   )
 
 
+PROGRESS_RE = re.compile(
+    r"^\s*(next|now|then|let me|i will|i'll|first|continuing|checking|"
+    r"looking|starting|moving|the next)\b|\[tool call\]",
+    re.I,
+)
+
+
+def progress_note(text: str) -> bool:
+  """Returns whether a model reply looks like a progress note, not a summary."""
+  value = (text or "").strip()
+  if not value:
+    return True
+  if len(value) < 140:
+    return True
+  return bool(PROGRESS_RE.search(value))
+
+
 async def solve(session: taskbridge.Session) -> str:
   """Runs the triage, execute, audit, fix, close pipeline for one task."""
   final = ""
@@ -590,6 +614,47 @@ async def solve(session: taskbridge.Session) -> str:
         f"missing={report.get('missing')} empty={report.get('empty')} "
         f"invalid={report.get('invalid')}"
     )
+
+    # A reply without a tool call ends Pi. If the model sent a progress note or
+    # stopped mid-thought, continue the work before spending time on audit.
+    for round_no in range(1, 3):
+      if not (progress_note(final) and missing_count(report) > 0):
+        break
+      left = session.time_left()
+      if left is not None and left < 1800:
+        break
+      desired = 0.60 * left if left is not None else 3 * 3600
+      stop, _ = phase_stop(left, desired, buffer=900)
+      continuation_prompt = (
+          session.instruction
+          + "\n\n## Your previous turn ended with\n\n"
+          + (final.strip() or "(no final summary)")
+          + "\n\n## Deterministic deliverable check\n\n"
+          + triage.summarize_check(report)
+          + "\n\nThat reply was not a final summary and the work is not complete. "
+          "Continue from the current workspace state. Read "
+          + SCRATCH
+          + "/BRIEF.md and "
+          + SCRATCH
+          + "/plan.md, then finish every required deliverable. Do not send progress "
+          "notes; a reply without a tool call ends the task."
+      )
+      cont, _ = await run_pi(
+          session,
+          continuation_prompt,
+          CONTINUATION,
+          stop,
+          default_effort(),
+          True,
+          f"continuation-{round_no}",
+      )
+      final = cont.final or final
+      report = await check(session, deliverables)
+      await session.log(
+          f"harness: continuation {round_no} ok={report.get('ok')} "
+          f"missing={report.get('missing')} empty={report.get('empty')} "
+          f"invalid={report.get('invalid')}"
+      )
 
     # Auditor: independent re-derivation. Skip only when the clock is short.
     left = session.time_left()

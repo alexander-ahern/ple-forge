@@ -33,7 +33,11 @@ def norm(workdir: str, path: str) -> str:
     return os.path.abspath(path)
 
 
-def dir_report(path: str, baseline: dict[str, dict[str, object]]) -> dict[str, object]:
+def dir_report(
+    path: str,
+    baseline: dict[str, dict[str, object]],
+    changed_only: bool = False,
+) -> dict[str, object]:
     files = []
     total = 0
     nonempty = 0
@@ -61,11 +65,15 @@ def dir_report(path: str, baseline: dict[str, dict[str, object]]) -> dict[str, o
                     files.append({"path": rel, "size": size, "changed": old is None or size != old.get("size")})
     except OSError as exc:
         return {"status": "error", "detail": str(exc)}
-    status = "ok" if nonempty else "empty"
+    if changed_only:
+        status = "ok" if changed > 0 else "empty"
+    else:
+        status = "ok" if nonempty else "empty"
     return {
         "status": status,
         "kind": "dir",
         "file_count": nonempty,
+        "changed_only": changed_only,
         "new_or_changed": changed,
         "total_size": total,
         "files": files,
@@ -267,7 +275,9 @@ def main() -> int:
         if not path:
             continue
         if os.path.isdir(path) or kind == "dir":
-            report = dir_report(path, baseline) if os.path.isdir(path) else {
+            report = dir_report(
+                path, baseline, bool(item.get("changed_only"))
+            ) if os.path.isdir(path) else {
                 "status": "missing",
                 "kind": "dir",
                 "detail": "directory does not exist",

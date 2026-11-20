@@ -135,7 +135,7 @@ def archive(path: str, members: list[dict[str, object]], workdir: str) -> bool:
                 continue
             fmt = str(member.get("format", ""))
             placeholder(os.path.join(tmp, name), fmt)
-        if os.path.exists(path) and os.path.getsize(path) > 0:
+        if os.path.exists(path) and zipfile.is_zipfile(path):
             mode = "a"
         else:
             mode = "w"
@@ -168,7 +168,11 @@ def main() -> int:
                 created.append(path)
             continue
         if item.get("format") == ".zip" and item.get("members"):
-            if not os.path.exists(path) or os.path.getsize(path) == 0:
+            if (
+                not os.path.exists(path)
+                or os.path.getsize(path) == 0
+                or not zipfile.is_zipfile(path)
+            ):
                 archive(path, item["members"], workdir)
                 created.append(path)
             else:

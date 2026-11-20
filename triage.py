@@ -420,7 +420,44 @@ def extract_deliverables(
             ]
             result = kept
 
-    return result, not bool(result)
+    unscoped = not bool(result)
+    if not result:
+        # The grader may read a whole directory rather than a named file. Use an
+        # existing output directory when the workspace has one; otherwise watch
+        # the workspace for any new or changed file.
+        for output_dir in inventory.get("output_dirs", []) or []:
+            raw = str(output_dir.get("path", ""))
+            if raw:
+                path = _norm(workdir, raw)
+                result.append(
+                    {
+                        "path": path,
+                        "kind": "dir",
+                        "format": "directory",
+                        "exists": True,
+                        "head": "",
+                        "evidence": "fallback: existing output directory (grader reads the directory)",
+                        "score": 1,
+                        "strong": False,
+                        "edit": False,
+                    }
+                )
+        if not result:
+            result.append(
+                {
+                    "path": workdir,
+                    "kind": "dir",
+                    "format": "directory",
+                    "exists": True,
+                    "head": "",
+                    "evidence": "fallback: task workspace (grader reads new/changed files)",
+                    "score": 1,
+                    "strong": False,
+                    "edit": False,
+                    "changed_only": True,
+                }
+            )
+    return result, unscoped
 
 
 def _fmt_size(size: int) -> str:
@@ -609,7 +646,14 @@ def summarize_check(check: dict[str, Any]) -> str:
         elif item.get("kind") == "ifc":
             extra = f"{item.get('entity_count', 0)} entities"
         elif item.get("kind") == "dir":
-            extra = f"{item.get('file_count', 0)} files"
+            extra = (
+                f"{item.get('file_count', 0)} files"
+                + (
+                    f", {item.get('new_or_changed', 0)} new/changed"
+                    if item.get("changed_only")
+                    else ""
+                )
+            )
         elif item.get("chars") is not None:
             extra = f"{item.get('chars')} chars"
         rows.append(
@@ -649,8 +693,9 @@ def build_audit_prompt(
         "the exact paths/formats the task asks for. For archives, list and open every "
         "required file. For code, run it in a temporary directory. Report only material "
         "gaps, as a numbered list with severity (BLOCKER/MAJOR/MINOR), the exact file or "
-        "number, and the correction needed. If there are no material gaps, reply with "
-        "the single word PASS."
+        "number, and the correction needed. If the summary is a progress note, stops "
+        "mid-sentence, or does not name the deliverables, report that as a BLOCKER too. "
+        "If there are no material gaps, reply with the single word PASS."
     )
 
 
@@ -737,6 +782,8 @@ def build_final_message(
             note.append(f"{item.get('entity_count', 0)} entities")
         if item.get("kind") == "dir":
             note.append(f"{item.get('file_count', 0)} files")
+            if item.get("changed_only"):
+                note.append(f"{item.get('new_or_changed', 0)} new/changed")
         if item.get("chars") is not None:
             note.append(f"{item.get('chars')} chars")
         if item.get("detail"):

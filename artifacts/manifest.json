@@ -1,18 +1,18 @@
 {
   "format": 1,
   "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
-  "created": "2026-11-20T22:02:50Z",
+  "created": "2026-11-20T22:22:31Z",
   "harness": {
     "name": "ple-forge",
     "model_api": "google-cloud/claude-opus-5-5",
-    "tree": "bb5d3c0919258804d61dc99dea7fa4c48dd58bada5461fff3bd5ee0bd1af16cb",
+    "tree": "af2e7473c9e4880b5b6e68ae1ca3b950a83c6d6f5bfe0ad9a00e9d1e8d66ace1",
     "files": {
       ".gitignore": "100644 42d6ecb1e3211e1dd0517ecbc9f7e8ef634547c2",
       "AGENTS.md": "100644 25352486aa25e3f5398a58a2e26f08c572ab1087",
       "LICENSE": "100644 261eeb9e9f8b2b4b0d119366dda99c6fd7d35c64",
       "README.md": "100644 3b3084af1580ff52fd02ddfe6869fd4c25007d53",
       "check_task.py": "100644 e0e2270108ac958008daf645a88d747f54b0ef78",
-      "harness.py": "100644 c2011f078c9fd46b59de990e6a26ccdf4ac6b836",
+      "harness.py": "100644 a01429c6ec9be768fb0bae2b3d887e2b33ec7a81",
       "package-lock.json": "100644 5dba6d2880e4966fca650af70db1c7345d14d20b",
       "package.json": "100644 701346d5e2e0f3fe4eee265d535319c0b8f634c5",
       "preflight_task.py": "100644 f6bf4734021a9b2959f217d0618087b426472995",
@@ -22,9 +22,9 @@
       "submission.yaml": "100644 5f00210e0fab87bc77242eb4a1e16e6f37a87808",
       "task-tools.ts": "100644 f0f8e7043d3d4c56e8c473b6af0686145706811b",
       "taskbridge.py": "100644 87b326ab2e055f877d6d08468711c1f992e61cc6",
-      "triage.py": "100644 beadd97f1f4e80866e6caf33857e34916f9fd7dc"
+      "triage.py": "100644 912cbace1dc407efa3fd52785d08b3689f4f23e2"
     },
-    "commit": "cedff13d44342e4e7f8c217b50185a756b4f6b34",
+    "commit": "87c712659cd81220e61535bc43d2384ddd42651a",
     "dirty": false
   },
   "tasks": {
@@ -43,14 +43,16 @@
       "skipped": []
     },
     "foundation-strategy": {
-      "run": "ple-forge-20261120-160017",
-      "trial": "foundation-strategy__uhsLQU8",
+      "run": "ple-forge-20261120-161338",
+      "trial": "foundation-strategy__cqma23r",
       "ended": "ok",
       "reward": 0.0,
-      "tree": "bb5d3c0919258804d61dc99dea7fa4c48dd58bada5461fff3bd5ee0bd1af16cb",
+      "tree": "af2e7473c9e4880b5b6e68ae1ca3b950a83c6d6f5bfe0ad9a00e9d1e8d66ace1",
       "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
-      "files": {},
-      "final_message": "2714f28a6e8cdb73e0490fd246421b89a197feff",
+      "files": {
+        "filesystem/dc_structural__foundation_strategy__blind/output/submission.zip": "2a139d4863393d622bf554642c3a6e1ca4d887c3"
+      },
+      "final_message": "e7fc416e93dfa813530149eb6726113c8a74cc42",
       "deleted": [],
       "skipped": []
     }
