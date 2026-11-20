@@ -1,29 +1,83 @@
-# Submission template: Pi on Claude Opus 5.5
+# ple-forge — triage-first engineering harness
 
-A working entry for the Physical-Engineering’s Last Exam harness competition: the [Pi](https://github.com/badlogic/pi-mono) coding agent calling `google-cloud/claude-opus-5-5`.
+An entry for [Physical-Engineering's Last Exam](https://ple-bench.com): a Pi
+coding-agent loop wrapped in a deterministic triage and verification layer.
 
-## Use it
+The design target is **reliability before cleverness**. The baseline Pi harness
+scores well on most dev tasks but loses whole tasks when it stops early or leaves
+a required deliverable missing. `ple-forge` adds four things around the same
+model:
 
-1. Click **Use this template**. Public works. Make it private if you add a `.env` with API keys or want to keep your code to yourself, and install the [PLE-submission](https://github.com/apps/ple-submission) app on it.
-2. Clone it next to the competition repository and set `name` in `submission.yaml`.
-3. From the competition repository, check the entry and run the dev set (a `google-cloud` model needs a local proxy, see `docs/models.md`):
-   ```bash
-   uv run python -m kit check ../your-repo
-   uv run python eval/run.py ../your-repo     # writes artifacts/
-   ```
-4. Commit everything, `artifacts/` included, push, and submit the commit on the competition site.
+1. **Preflight inventory** — walks the task workspace, classifies drawings,
+   schedules, models, and code, detects available tools, and extracts candidate
+   deliverable paths from the instruction.
+2. **Deliverable contract** — writes a brief and a plan skeleton, creates the
+   parent directories for every required path, and tells the executor to create
+   a skeleton early.
+3. **Independent audit** — a fresh, read-only reviewer re-opens every
+   deliverable, recomputes key numbers, checks units and formats, and returns a
+   severity-ranked gap list.
+4. **Deterministic safety net** — a checker validates existence, non-emptiness,
+   archive contents, Python syntax, IFC/DXF/PDF headers, and table structure. A
+   short closer runs if any required path is still missing.
 
-`artifacts/` already holds a dev-set run of Pi on Claude Opus 5.5 over all 29 dev tasks, so the template can be submitted unchanged. Once you change anything, `name` included, step 3 replaces it with your harness's run.
-
-## Files
+## Layout
 
 | File | Purpose |
 |---|---|
-| `submission.yaml` | The model, and the install and start commands |
-| `serve.py` | The WebSocket endpoint: hands each task to `harness.solve` |
-| `harness.py` | Runs Pi on each task. Edit `NOTE` (prompt), `THINKING`, or `UNKNOWN_MODEL` (limits for a model Pi doesn't know) |
-| `task-tools.ts` | Points Pi's `read`, `write`, `edit` and `bash` tools at the task container |
-| `taskbridge.py` | The competition protocol |
-| `package.json`, `package-lock.json` | Pi 1.1.0 and every package it uses, pinned. To upgrade, edit `package.json`, run `npm install --package-lock-only`, commit both |
-| `artifacts/` | The dev-set artifacts the portal grades, one folder per dev task |
-| `AGENTS.md` | The full rules, for a coding agent working on your entry |
+| `serve.py` | WebSocket entry point; hands each task to `harness.solve` |
+| `harness.py` | Preflight → executor → auditor → fixer → closer orchestration |
+| `triage.py` | Deliverable extraction, brief building, prompts, final summary |
+| `preflight_task.py` | Stdlib-only workspace inventory run inside the task container |
+| `check_task.py` | Stdlib-only deliverable checker run inside the task container |
+| `task-tools.ts` | Points Pi's read/write/edit/bash tools at the task container |
+| `taskbridge.py` | Competition protocol; `run_process` has a fixed-budget option |
+| `package.json`, `package-lock.json` | Pi 1.1.0 and its dependencies, pinned |
+| `artifacts/` | Dev-set outputs, written by `eval/run.py` (never by hand) |
+
+## Time budget
+
+With the standard 6-hour task limit:
+
+| Phase | Budget |
+|---|---|
+| Preflight | ~1–3 min |
+| Executor | 85% of total |
+| Auditor | up to 20 min |
+| Fixer | up to 20 min |
+| Closer | up to 3 min |
+
+The executor stops with enough time for the independent audit and a fix round.
+If the model finishes early, the remaining time stays as buffer.
+
+## Teardown / failure behavior
+
+Every phase is wrapped so the task still ends with `done`:
+
+- a phase that fails does not abort the task;
+- the last good summary is preserved;
+- the deterministic checker runs again after every write phase;
+- a missing or empty deliverable triggers a short closer before the deadline.
+
+The harness never reads `artifacts/`, the dev-set graders, or the entry's git
+history at runtime.
+
+## Local development
+
+The competition kit and `eval/run.py` need Linux (they use `fcntl`). On this
+machine they run inside WSL Ubuntu 24.04 at `/root/ple-work`; the model proxy is
+a local LiteLLM process backed by OpenRouter on port 4001. See
+`../model-proxy/README.md`.
+
+```bash
+# inside WSL
+cd /root/ple-work/ple
+export MODEL_PROXY_URL=http://localhost:4001
+export MODEL_PROXY_KEY="$(cat /root/ple-work/model-proxy/proxy.key)"
+uv run python -m kit check /root/ple-work/ple-forge
+uv run python eval/run.py /root/ple-work/ple-forge --tasks data-center-site-model
+```
+
+The entry is submitted on Kaggle with `model_api:
+google-cloud/claude-opus-5-5`. The final `artifacts/` must be generated by
+`eval/run.py` from the exact harness and model declared in `submission.yaml`.

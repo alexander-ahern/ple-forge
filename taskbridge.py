@@ -1432,6 +1432,7 @@ async def run_process(
     stdin: bytes | None = None,
     on_line: Any = None,
     stop_before_sec: float = 60,
+    fraction: float = 0.25,
     log_prefix: str = "",
 ) -> Finished:
   """Runs an agent subprocess until exit, cancellation, or `stop_before_sec`.
@@ -1448,6 +1449,9 @@ async def run_process(
     stdin: Optional bytes to write to the subprocess's standard input.
     on_line: Optional async callback `on_line(line_bytes)` for stdout lines.
     stop_before_sec: Seconds to reserve before the session deadline.
+    fraction: Largest share of the remaining time that may be reserved. The
+      default 0.25 gives one long step at least 75% of the time; pass 1.0 to
+      honor `stop_before_sec` exactly for a short, fixed-budget step.
     log_prefix: Prefix prepended to stderr lines sent to the task log.
 
   Returns:
@@ -1492,7 +1496,7 @@ async def run_process(
       *([feed()] if stdin is not None else []),
   )
   left = session.time_left()
-  run_for = time_share(left, stop_before_sec)
+  run_for = time_share(left, stop_before_sec, fraction)
   stopped = False
   try:
     await asyncio.wait_for(asyncio.shield(proc.wait()), run_for)
