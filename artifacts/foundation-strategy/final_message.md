@@ -1,4 +1,4 @@
-Next is the GEC 13 aggregate-pier design method.
+Work completed. The deterministic deliverable check is below.
 
 ## Delivered files (deterministic check)
 

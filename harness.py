@@ -174,10 +174,11 @@ def configure(
   model = os.environ["MODEL_NAME"]
   name, config = provider()
   models = agent_dir / "models.json"
+  # Always publish explicit limits: without them Pi's catalog can request a
+  # 128k-token completion, which makes the gateway pre-authorize far more
+  # credit than a dev run needs.
+  config["models"] = [{"id": model, "name": model, **model_limits()}]
   models.write_text(json.dumps({"providers": {name: config}}))
-  if not in_catalog(name, model, env):
-    config["models"] = [{"id": model, "name": model, **model_limits()}]
-    models.write_text(json.dumps({"providers": {name: config}}))
   settings = {
       "defaultProjectTrust": "never",
       "quietStartup": True,
@@ -204,6 +205,7 @@ class Run:
     self.publish = publish
     self.replies = 0
     self.final = ""
+    self.error = ""
 
   async def on_event(self, event: dict[str, Any]) -> None:
     """Processes a parsed JSON event from Pi, updating final message and usage."""
@@ -220,9 +222,8 @@ class Run:
         if self.publish:
           self.session.final_message = self.final
       if message.get("stopReason") == "error":
-        await self.session.log(
-            f"pi: model error: {message.get('errorMessage')}"
-        )
+        self.error = str(message.get("errorMessage") or "")
+        await self.session.log(f"pi: model error: {self.error}")
       # input_tokens counts cached prompt tokens too
       u = message.get("usage") or {}
       await self.session.usage(
@@ -615,10 +616,19 @@ async def solve(session: taskbridge.Session) -> str:
         f"invalid={report.get('invalid')}"
     )
 
+    blocked = "402" in (run.error or "") or "credits" in (
+        run.error or ""
+    ).lower()
+    if blocked:
+      await session.log(
+          "harness: model credit/auth error; skipping model phases and using the "
+          "deterministic scaffold"
+      )
+
     # A reply without a tool call ends Pi. If the model sent a progress note or
     # stopped mid-thought, continue the work before spending time on audit.
     for round_no in range(1, 3):
-      if not (progress_note(final) and missing_count(report) > 0):
+      if blocked or not (progress_note(final) and missing_count(report) > 0):
         break
       left = session.time_left()
       if left is not None and left < 1800:
@@ -656,9 +666,10 @@ async def solve(session: taskbridge.Session) -> str:
           f"invalid={report.get('invalid')}"
       )
 
-    # Auditor: independent re-derivation. Skip only when the clock is short.
+    # Auditor: independent re-derivation. Skip when the clock is short or the
+    # model endpoint is refusing requests.
     left = session.time_left()
-    if left is None or left > 900:
+    if not blocked and (left is None or left > 900):
       stop, _ = phase_stop(left, AUDIT_SEC, buffer=300)
       audit_prompt = triage.build_audit_prompt(
           session.instruction, SCRATCH, final, report
@@ -700,7 +711,9 @@ async def solve(session: taskbridge.Session) -> str:
 
     # Closer: the deterministic safety net for a missing/empty path.
     left = session.time_left()
-    if missing_count(report) > 0 and (left is None or left > 120):
+    if not blocked and missing_count(report) > 0 and (
+        left is None or left > 120
+    ):
       stop, _ = phase_stop(left, CLOSE_SEC, buffer=30)
       close_prompt = triage.build_closer_prompt(
           session.instruction, SCRATCH, report, left

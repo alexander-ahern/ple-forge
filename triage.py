@@ -605,7 +605,9 @@ def build_brief(
         "  pages with the read tool and transcribe dimensions, callouts, schedules, and",
         "  elevations. Do not guess what a drawing shows.",
         "- Work in the project's units. State assumptions; convert consistently; keep",
-        "  dimensions and units explicit in `calc_log.csv`.",
+        "  dimensions and units explicit in `calc_log.csv`. If the task states a",
+        "  mixed convention (for example millimetre project units but metre placement",
+        "  translations), apply it exactly and check every placement and property.",
         "- Compute with code, not by hand. Independently re-derive key numbers and check",
         "  sums, totals, boundary conditions, and sign conventions.",
         "- Geometry/CAD/BIM: use the project coordinate system; check clashes,",
@@ -688,10 +690,13 @@ def build_audit_prompt(
         + "\n\n## Deterministic deliverable check\n\n"
         + summarize_check(check)
         + "\n\nAudit the work as an independent senior engineer. Do not modify any file. "
-        "Open every deliverable and the source data. Recompute the key numbers with "
-        "Python in /tmp only. Check units, dimensions, sums, boundary conditions, and "
-        "the exact paths/formats the task asks for. For archives, list and open every "
-        "required file. For code, run it in a temporary directory. Report only material "
+        "Open every deliverable and the source data. Re-read the governing criteria, "
+        "specification clauses, and schedules yourself; do not rely on the engineer's "
+        "summary for the method, the governing document, or a superseded/cancelled "
+        "document. Recompute the key numbers with Python in /tmp only. Check units, "
+        "dimensions, sums, boundary conditions, sign conventions, and the exact "
+        "paths/formats the task asks for. For archives, list and open every required "
+        "file. For code, run it in a temporary directory. Report only material "
         "gaps, as a numbered list with severity (BLOCKER/MAJOR/MINOR), the exact file or "
         "number, and the correction needed. If the summary is a progress note, stops "
         "mid-sentence, or does not name the deliverables, report that as a BLOCKER too. "
