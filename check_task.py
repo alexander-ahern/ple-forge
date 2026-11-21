@@ -13,9 +13,11 @@ Usage: python3 check_task.py <workdir> <deliverables.json> [scratch]
 from __future__ import annotations
 
 import csv
+import html
 import io
 import json
 import os
+import re
 import sys
 import zipfile
 
@@ -123,6 +125,52 @@ def zip_report(path: str, required_names: list[str] | None = None) -> dict[str, 
         return {"status": "invalid", "kind": "archive", "detail": str(exc)}
 
 
+def docx_report(path: str) -> dict[str, object]:
+    try:
+        with zipfile.ZipFile(path) as zf:
+            xml = zf.read("word/document.xml").decode("utf-8", "replace")
+    except (KeyError, zipfile.BadZipFile, OSError) as exc:
+        return {"status": "invalid", "kind": "docx", "detail": str(exc)}
+    text = html.unescape(re.sub(r"<[^>]+>", " ", xml))
+    text = re.sub(r"\s+", " ", text).strip()
+    return {
+        "status": "ok" if len(text) > 20 else "empty",
+        "kind": "docx",
+        "chars": len(text),
+        "head": text[:400],
+    }
+
+
+def xlsx_report(path: str) -> dict[str, object]:
+    try:
+        with zipfile.ZipFile(path) as zf:
+            names = zf.namelist()
+            shared = []
+            if "xl/sharedStrings.xml" in names:
+                data = zf.read("xl/sharedStrings.xml").decode("utf-8", "replace")
+                shared = [
+                    html.unescape(re.sub(r"<[^>]+>", "", m))
+                    for m in re.findall(r"<t[^>]*>(.*?)</t>", data, re.S)
+                ]
+            sheets = [n for n in names if n.startswith("xl/worksheets/sheet")]
+            rows = cells = 0
+            if sheets:
+                data = zf.read(sheets[0]).decode("utf-8", "replace")
+                rows = data.count("<row")
+                cells = data.count("<c")
+    except (KeyError, zipfile.BadZipFile, OSError) as exc:
+        return {"status": "invalid", "kind": "xlsx", "detail": str(exc)}
+    return {
+        "status": "ok" if rows or shared else "empty",
+        "kind": "xlsx",
+        "sheets": len(sheets),
+        "rows": rows,
+        "cells": cells,
+        "shared_strings": len(shared),
+        "head": " | ".join(shared[:20])[:400],
+    }
+
+
 def ifc_report(path: str) -> dict[str, object]:
     try:
         with open(path, "rb") as fh:
@@ -228,7 +276,11 @@ def file_report(path: str, required_names: list[str] | None = None) -> dict[str,
     ext = os.path.splitext(path)[1].lower()
     if size == 0:
         return {"status": "empty", "kind": ext.lstrip("."), "size": 0}
-    if ext in (".zip", ".docx", ".xlsx", ".pptx", ".odt", ".ods", ".odp"):
+    if ext == ".docx":
+        report = docx_report(path)
+    elif ext == ".xlsx":
+        report = xlsx_report(path)
+    elif ext in (".zip", ".pptx", ".odt", ".ods", ".odp"):
         report = zip_report(path, required_names)
     elif ext == ".ifc":
         report = ifc_report(path)

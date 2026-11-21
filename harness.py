@@ -81,7 +81,8 @@ Work in this order:
 4. Compute with code, not by hand. Re-derive key quantitative results independently and check units, dimensions, sums, totals, and boundary conditions.
 5. For geometry/CAD/BIM, check clashes, containment, clearances, connectivity, and the project coordinate system. For code, run it and check its output. For archives, list the contents. For documents, include every requested section.
 6. Before finishing, open every deliverable and verify its exact path, format, and required content.
-7. If a deliverable is an archive, create it with every required member at the stated root early, then replace member contents in place. If the task asks for a document in a document store or a case-tracking update, use the MCP tools.
+7. If a deliverable is an archive, create it with every required member at the stated root early, then replace member contents in place.
+8. If the task asks for a document in a document store or a case-tracking update, use the MCP tools. List the store folders and case projects first, file in the exact folder named in the instruction, and report the store path and case/work-package IDs in the summary.
 
 A reply without a tool call ends the task. Do not send progress notes, next-step notes, or partial thoughts. Only reply when every deliverable exists and has been checked; then give a concise summary of each deliverable, its exact path, and the key results."""
 

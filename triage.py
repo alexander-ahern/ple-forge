@@ -525,6 +525,15 @@ def build_brief(
                 f"{member_note} |"
             )
         lines.append("")
+    if unscoped or any(d.get("kind") == "dir" for d in deliverables):
+        lines += [
+            "The grader for this task reads a **directory**, not one named file. Create",
+            "a clearly named deliverable (`.docx`, `.md`, `.xlsx`, `.pdf`, or the",
+            "format the instruction asks for) in the workspace or its output folder,",
+            "and report the exact path in the final summary. Keep scratch files in",
+            "`/tmp/ple-forge`, not in the deliverable directory.",
+            "",
+        ]
     lines += [
         "## 3. Workspace inventory",
         "",
@@ -593,7 +602,10 @@ def build_brief(
         lines.append(
             "If the task asks you to file a document, update a case, send a message, "
             "or close a record, use these MCP tools. A local file alone may not satisfy "
-            "the deliverable."
+            "the deliverable. Before filing, list the document-store folders and "
+            "case-tracking projects with the MCP tools and locate the exact folder or "
+            "case named in the instruction; do not invent one. Report the store path "
+            "and the case/work-package IDs in the final summary."
         )
         lines.append("")
     lines += [
@@ -621,7 +633,24 @@ def build_brief(
         "- Create a skeleton at every required deliverable path early. Never leave a",
         "  required path missing.",
         "",
-        "## 6. Time budget",
+        "## 6. Format-specific checks",
+        "",
+        "- **IFC/BIM:** open the result with ifcopenshell; check the schema, project",
+        "  units versus placement translations, required classes and property sets,",
+        "  clashes, containment, clearances, connectivity, and that the generator",
+        "  script runs headless and is deterministic. If the task says millimetre",
+        "  project units but **metre** placement-matrix translations, verify every",
+        "  `IfcAxis2Placement3D` translation is in metres (roughly 0–30, not 0–30000)",
+        "  while profile dimensions and section sizes stay in millimetres.",
+        "- **DXF:** open with ezdxf; check units, layers, entities, and dimensions.",
+        "- **XLSX:** open with openpyxl; check sheet names, headers, row counts, and",
+        "  that totals/formulas agree with the other deliverables.",
+        "- **DOCX/PDF:** extract text and tables; check every requested section,",
+        "  number, signature block, and the exact filename.",
+        "- **ZIP:** list the archive; every required member must be at the root, and",
+        "  the member contents must agree with each other.",
+        "",
+        "## 7. Time budget",
         "",
     ]
     if time_left is None:
@@ -656,6 +685,8 @@ def summarize_check(check: dict[str, Any]) -> str:
                     else ""
                 )
             )
+        elif item.get("kind") == "xlsx":
+            extra = f"{item.get('sheets', 0)} sheets, {item.get('rows', 0)} rows"
         elif item.get("chars") is not None:
             extra = f"{item.get('chars')} chars"
         rows.append(
@@ -791,6 +822,8 @@ def build_final_message(
             note.append(f"{item.get('file_count', 0)} files")
             if item.get("changed_only"):
                 note.append(f"{item.get('new_or_changed', 0)} new/changed")
+        if item.get("kind") == "xlsx":
+            note.append(f"{item.get('sheets', 0)} sheets, {item.get('rows', 0)} rows")
         if item.get("chars") is not None:
             note.append(f"{item.get('chars')} chars")
         if item.get("detail"):
