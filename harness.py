@@ -47,6 +47,7 @@ import tempfile
 import traceback
 from typing import Any
 
+import ocr
 import taskbridge
 import triage
 
@@ -79,7 +80,7 @@ Work in this order:
 2. Write {scratch}/plan.md with the exact deliverable paths, formats, required content, method, and verification steps. Create a skeleton at every required deliverable path early. Never leave a required path missing.
 3. Execute the plan in small, verified steps. Keep {scratch}/notes.md and {scratch}/calc_log.csv current.
 4. Compute with code, not by hand. Re-derive key quantitative results independently and check units, dimensions, sums, totals, and boundary conditions.
-5. Drawings are images you can see directly through the read tool. Do not build an OCR or glyph-recognition pipeline, and do not install tesseract/scipy. Read the drawing visually; crop with PIL if needed. For geometry/CAD/BIM, check clashes, containment, clearances, connectivity, and the project coordinate system. For code, run it and check its output. For archives, list the contents. For documents, include every requested section.
+5. The brief already contains pre-extracted OCR text for the drawings. Read it first. Do not write a PNG decoder, ASCII viewer, OCR, or glyph-recognition pipeline, and do not install tesseract/scipy. Drawings are also images you can see directly through the read tool; crop with PIL only if a region is too small. For geometry/CAD/BIM, check clashes, containment, clearances, connectivity, and the project coordinate system. For code, run it and check its output. For archives, list the contents. For documents, include every requested section.
 6. Write a first complete version of the deliverable within the first ~20 minutes, even if rough, then improve it in place. Do not spend more than ~20 minutes on source extraction before a deliverable exists.
 7. Before finishing, open every deliverable and verify its exact path, format, and required content.
 8. If a deliverable is an archive, create it with every required member at the stated root early, then replace member contents in place.
@@ -101,7 +102,7 @@ CLOSER = """You are an expert engineer working against a hard deadline in a Linu
 
 CONTINUATION = """You are continuing an engineering task in a Linux container. The previous turn ended before the work was complete. Your tools act inside it, and bash starts in {workdir}. Read {scratch}/BRIEF.md and {scratch}/plan.md, then inspect the current workspace.
 
-Drawings are images you can see directly through the read tool. Do not build an OCR or glyph-recognition pipeline. Write a first complete version of the deliverable within the next ~20 minutes, then improve it.
+The brief already contains pre-extracted OCR text for the drawings; read it first. Do not write a PNG decoder, ASCII viewer, OCR, or glyph-recognition pipeline. Write a first complete version of the deliverable within the next ~20 minutes, then improve it.
 
 Finish every required deliverable. Important: a reply without a tool call ends the task. Do not send progress notes, next-step notes, or partial thoughts. Keep calling tools until every deliverable is written and verified, then reply with a concise summary of each deliverable, its exact path, and the key results."""
 
@@ -329,6 +330,54 @@ async def mcp_catalog(session: taskbridge.Session) -> list[dict[str, Any]]:
   return catalog
 
 
+async def ocr_images(
+    session: taskbridge.Session, inventory: dict[str, Any]
+) -> list[dict[str, Any]]:
+  """OCRs the workspace's images and writes the text into the scratch dir."""
+  if not ocr.available():
+    return []
+  images = [
+      item
+      for item in inventory.get("files", []) or []
+      if str(item.get("ext", "")).lower()
+      in (".png", ".jpg", ".jpeg", ".tif", ".tiff", ".bmp")
+      and int(item.get("size", 0)) <= 10_000_000
+  ][:10]
+  results: list[dict[str, Any]] = []
+  for item in images:
+    rel = str(item.get("path", ""))
+    try:
+      data = await session.read_file(rel)
+      lines = await asyncio.to_thread(
+          ocr.ocr_image, data, str(item.get("ext", ".png"))
+      )
+    except Exception as exc:  # noqa: BLE001 - OCR is best-effort
+      await session.log(f"harness: OCR skipped {rel}: {type(exc).__name__}")
+      continue
+    text = "\n".join(lines)
+    if not text:
+      continue
+    out_path = f"{SCRATCH}/ocr/{os.path.basename(rel)}.txt"
+    with contextlib.suppress(Exception):
+      await session.write_file(out_path, text)
+    results.append(
+        {
+            "path": rel,
+            "chars": len(text),
+            "lines": len(lines),
+            "head": lines[:24],
+            "text_path": out_path,
+        }
+    )
+    await session.log(f"harness: OCR {rel}: {len(lines)} lines")
+  if results:
+    with contextlib.suppress(Exception):
+      await session.write_file(
+          f"{SCRATCH}/ocr/index.json", json.dumps(results, indent=1)
+      )
+  return results
+
+
 async def preflight(
     session: taskbridge.Session,
 ) -> tuple[dict[str, Any], list[dict[str, Any]], bool, list[dict[str, Any]]]:
@@ -351,6 +400,7 @@ async def preflight(
         "tools": {"commands": {}, "modules": {}},
         "files": [],
     }
+  inventory["ocr"] = await ocr_images(session, inventory)
   deliverables, unscoped = triage.extract_deliverables(
       session.instruction, inventory, session.workdir
   )
@@ -662,12 +712,14 @@ async def solve(session: taskbridge.Session) -> str:
           + "\n\n## Deterministic deliverable check\n\n"
           + triage.summarize_check(report)
           + "\n\nThat reply was not a final summary and the work is not complete. "
-          "Continue from the current workspace state. Read "
+          "Continue from the current workspace state. Do not spend more time on "
+          "source extraction: write the first complete version of every deliverable "
+          "now, then improve it. Read "
           + SCRATCH
           + "/BRIEF.md and "
           + SCRATCH
-          + "/plan.md, then finish every required deliverable. Do not send progress "
-          "notes; a reply without a tool call ends the task."
+          + "/plan.md if needed. Do not send progress notes; a reply without a tool "
+          "call ends the task."
       )
       cont, _ = await run_pi(
           session,

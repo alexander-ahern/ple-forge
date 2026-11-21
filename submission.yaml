@@ -18,4 +18,6 @@ install: >-
   npm ci --prefix {src} --no-fund --no-audit
   && uv venv --python 3.12 /opt/harness/venv
   && uv pip install --python /opt/harness/venv/bin/python -r {src}/requirements.txt
+  && uv pip install --python /opt/harness/venv/bin/python --force-reinstall --no-deps
+  opencv-python-headless==5.1.0.95
 serve: /opt/harness/venv/bin/python {src}/serve.py

@@ -1,4 +1,4 @@
-"""Host-side triage: deliverable extraction, brief building, and prompts.
+﻿"""Host-side triage: deliverable extraction, brief building, and prompts.
 
 This module runs in the harness (serve) container. It never reads the dev-set
 graders or the entry's own artifacts; it only uses the task instruction and the
@@ -494,7 +494,7 @@ def build_brief(
         "",
         instruction.strip(),
         "",
-        "## 2. Deliverable contract (candidates — confirm against the instruction)",
+        "## 2. Deliverable contract (candidates â€” confirm against the instruction)",
         "",
     ]
     if unscoped:
@@ -548,7 +548,7 @@ def build_brief(
         for d in dirs[:12]:
             sample = ", ".join(f["name"] for f in (d.get("files", []) or [])[:8])
             lines.append(
-                f"- `{d.get('path')}` — {d.get('file_count', 0)} file(s), "
+                f"- `{d.get('path')}` â€” {d.get('file_count', 0)} file(s), "
                 f"{_fmt_size(int(d.get('total_size', 0)))}"
                 + (f"; e.g. {sample}" if sample else "")
             )
@@ -572,12 +572,29 @@ def build_brief(
         + (", ".join(sorted(k for k, v in modules.items() if v)) or "none detected")
     )
     lines.append("")
+    ocr = inventory.get("ocr", []) or []
+    if ocr:
+        lines += ["## 4. Drawing OCR (pre-extracted by the harness)", ""]
+        lines.append(
+            "The harness already OCRed these images. Full text is in the task "
+            "scratch directory; read it with bash instead of building an OCR "
+            "pipeline."
+        )
+        lines.append("")
+        for item in ocr[:10]:
+            lines.append(
+                f"### `{item.get('path')}` ({item.get('lines', 0)} lines, "
+                f"{item.get('chars', 0)} chars) â€” `{item.get('text_path')}`"
+            )
+            for line in (item.get("head") or [])[:18]:
+                lines.append(f"- {line}")
+            lines.append("")
     if mcp:
-        lines += ["## 4. MCP servers (task applications)", ""]
+        lines += ["## 5. MCP servers (task applications)", ""]
         for server in mcp:
             name = server.get("name", "mcp")
             if server.get("error"):
-                lines.append(f"- **{name}**: unavailable — {server['error']}")
+                lines.append(f"- **{name}**: unavailable â€” {server['error']}")
                 continue
             tools = server.get("tools", []) or []
             key = [
@@ -592,12 +609,12 @@ def build_brief(
                 )
             ][:14]
             lines.append(
-                f"- **{name}** — {server.get('tool_count', len(tools))} tools. "
+                f"- **{name}** â€” {server.get('tool_count', len(tools))} tools. "
                 f"Full catalog: `{scratch}/mcp_catalog.json`."
             )
             for tool in key:
                 desc = str(tool.get("description", "")).splitlines()[0][:140]
-                lines.append(f"  - `{tool.get('name')}` — {desc}")
+                lines.append(f"  - `{tool.get('name')}` â€” {desc}")
         lines.append("")
         lines.append(
             "If the task asks you to file a document, update a case, send a message, "
@@ -609,7 +626,7 @@ def build_brief(
         )
         lines.append("")
     lines += [
-        "## 5. Engineering guardrails",
+        "## 6. Engineering guardrails",
         "",
         "- Read the whole instruction before acting. Identify every deliverable path,",
         "  filename, format, and required section.",
@@ -638,7 +655,7 @@ def build_brief(
         "- Create a skeleton at every required deliverable path early. Never leave a",
         "  required path missing.",
         "",
-        "## 6. Format-specific checks",
+        "## 7. Format-specific checks",
         "",
         "- **IFC/BIM:** build the model with the low-level ifcopenshell API: create",
         "  `IfcProject`, `IfcSite`, `IfcBuilding`, and `IfcBuildingStorey`, set the",
@@ -648,8 +665,8 @@ def build_brief(
         "  placement translations, required classes and property sets, clashes,",
         "  containment, clearances, connectivity, and determinism. If the task says",
         "  millimetre project units but **metre** placement-matrix translations, verify",
-        "  every `IfcAxis2Placement3D` translation is in metres (roughly 0–30, not",
-        "  0–30000) while profile dimensions and section sizes stay in millimetres.",
+        "  every `IfcAxis2Placement3D` translation is in metres (roughly 0â€“30, not",
+        "  0â€“30000) while profile dimensions and section sizes stay in millimetres.",
         "- **DXF:** open with ezdxf; check units, layers, entities, and dimensions.",
         "- **XLSX:** open with openpyxl; check sheet names, headers, row counts, and",
         "  that totals/formulas agree with the other deliverables.",
@@ -658,7 +675,7 @@ def build_brief(
         "- **ZIP:** list the archive; every required member must be at the root, and",
         "  the member contents must agree with each other.",
         "",
-        "## 7. Time budget",
+        "## 8. Time budget",
         "",
     ]
     if time_left is None:
@@ -700,8 +717,8 @@ def summarize_check(check: dict[str, Any]) -> str:
         rows.append(
             f"- `{item.get('path')}`: **{status}**"
             + (f" ({_fmt_size(int(size))})" if isinstance(size, int) else "")
-            + (f" — {extra}" if extra else "")
-            + (f" — {detail}" if detail else "")
+            + (f" â€” {extra}" if extra else "")
+            + (f" â€” {detail}" if detail else "")
         )
     if not rows:
         rows = ["- No deliverable paths were extracted; inspect the instruction and workspace."]
@@ -837,10 +854,11 @@ def build_final_message(
         if item.get("detail"):
             note.append(str(item["detail"])[:120])
         lines.append(
-            f"- `{item.get('path')}` — **{status}**"
+            f"- `{item.get('path')}` â€” **{status}**"
             + (f", {_fmt_size(int(size))}" if isinstance(size, int) else "")
-            + ((" — " + "; ".join(note)) if note else "")
+            + ((" â€” " + "; ".join(note)) if note else "")
         )
     if not check.get("deliverables"):
         lines.append("- No deliverable paths were extracted; see the task instruction.")
     return "\n".join(lines)
+
