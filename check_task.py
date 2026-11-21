@@ -258,6 +258,24 @@ def py_report(path: str) -> dict[str, object]:
         with open(path, "r", encoding="utf-8", errors="replace") as fh:
             source = fh.read()
         compile(source, path, "exec")
+        low = source.lower()
+        stub = (
+            len(source) < 1500
+            and (
+                "submission stub" in low
+                or "stub was never replaced" in low
+                or "draft: the model did not finish" in low
+                or "not implemented" in low
+                or ("todo" in low and "raise systemexit" in low)
+            )
+        )
+        if stub:
+            return {
+                "status": "invalid",
+                "kind": "python",
+                "chars": len(source),
+                "detail": "looks like a stub/placeholder, not a solution",
+            }
         return {"status": "ok", "kind": "python", "chars": len(source)}
     except SyntaxError as exc:
         return {"status": "invalid", "kind": "python", "detail": f"{exc.msg} at line {exc.lineno}"}

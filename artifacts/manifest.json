@@ -1,18 +1,18 @@
 {
   "format": 1,
   "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
-  "created": "2026-11-21T00:18:23Z",
+  "created": "2026-11-21T03:43:56Z",
   "harness": {
     "name": "ple-forge",
     "model_api": "google-cloud/claude-opus-5-5",
-    "tree": "e3dc4d7eb6b180cb58b48242bc242095315e26a65847ad1f4ad5831d70fbf191",
+    "tree": "d3d169134a36f24a0433e929e81c566829f0624d6f86af15bb0aa46a5901d9db",
     "files": {
       ".gitignore": "100644 42d6ecb1e3211e1dd0517ecbc9f7e8ef634547c2",
       "AGENTS.md": "100644 4608473bcec7723934c9b9db008a88bce0e75d2e",
       "LICENSE": "100644 261eeb9e9f8b2b4b0d119366dda99c6fd7d35c64",
       "README.md": "100644 3b3084af1580ff52fd02ddfe6869fd4c25007d53",
-      "check_task.py": "100644 a97611c69b226e78c0066a0ffd17c68b2f4ad03d",
-      "harness.py": "100644 86e0658bc31beb48b6515f47778708c6aa5d2960",
+      "check_task.py": "100644 494bfe301185cb68585321415835e7e936d2e522",
+      "harness.py": "100644 276d0ca1cf69564e919e2071721948964d2d5500",
       "package-lock.json": "100644 5dba6d2880e4966fca650af70db1c7345d14d20b",
       "package.json": "100644 701346d5e2e0f3fe4eee265d535319c0b8f634c5",
       "preflight_task.py": "100644 f6bf4734021a9b2959f217d0618087b426472995",
@@ -22,9 +22,9 @@
       "submission.yaml": "100644 5f00210e0fab87bc77242eb4a1e16e6f37a87808",
       "task-tools.ts": "100644 f0f8e7043d3d4c56e8c473b6af0686145706811b",
       "taskbridge.py": "100644 87b326ab2e055f877d6d08468711c1f992e61cc6",
-      "triage.py": "100644 144fc266aa167e92f8ce390fd3f3e70a566d2902"
+      "triage.py": "100644 c6fb62c07d5dd1c25602860d15441873c3f9234b"
     },
-    "commit": "3d6d3b50845b289b319deded0d734148f2951989",
+    "commit": "28b62b6e1f81f12fa640d4ea04ef6d831bb52d92",
     "dirty": false
   },
   "tasks": {
@@ -43,16 +43,28 @@
       "skipped": []
     },
     "foundation-strategy": {
+      "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
       "run": "ple-forge-20261120-175439",
       "trial": "foundation-strategy__QwQfP2G",
       "ended": "ok",
       "reward": 0.806824,
       "tree": "e3dc4d7eb6b180cb58b48242bc242095315e26a65847ad1f4ad5831d70fbf191",
-      "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
       "files": {
         "filesystem/dc_structural__foundation_strategy__blind/output/submission.zip": "1f97edf10e2797525d96bb7183d5e958bf5ae9df"
       },
       "final_message": "94799c7f79d6b44afa2e7e92fda5c80ac85e20c1",
+      "deleted": [],
+      "skipped": []
+    },
+    "data-hall-mep-routing": {
+      "run": "ple-forge-20261120-212212",
+      "trial": "data-hall-mep-routing__SmyyjHs",
+      "ended": "ok",
+      "reward": 0.0,
+      "tree": "d3d169134a36f24a0433e929e81c566829f0624d6f86af15bb0aa46a5901d9db",
+      "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
+      "files": {},
+      "final_message": "6f71f59001f73215be68e735eb9552355bbd357c",
       "deleted": [],
       "skipped": []
     }

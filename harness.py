@@ -79,10 +79,11 @@ Work in this order:
 2. Write {scratch}/plan.md with the exact deliverable paths, formats, required content, method, and verification steps. Create a skeleton at every required deliverable path early. Never leave a required path missing.
 3. Execute the plan in small, verified steps. Keep {scratch}/notes.md and {scratch}/calc_log.csv current.
 4. Compute with code, not by hand. Re-derive key quantitative results independently and check units, dimensions, sums, totals, and boundary conditions.
-5. For geometry/CAD/BIM, check clashes, containment, clearances, connectivity, and the project coordinate system. For code, run it and check its output. For archives, list the contents. For documents, include every requested section.
-6. Before finishing, open every deliverable and verify its exact path, format, and required content.
-7. If a deliverable is an archive, create it with every required member at the stated root early, then replace member contents in place.
-8. If the task asks for a document in a document store or a case-tracking update, use the MCP tools. List the store folders and case projects first, file in the exact folder named in the instruction, and report the store path and case/work-package IDs in the summary.
+5. Drawings are images you can see directly through the read tool. Do not build an OCR or glyph-recognition pipeline, and do not install tesseract/scipy. Read the drawing visually; crop with PIL if needed. For geometry/CAD/BIM, check clashes, containment, clearances, connectivity, and the project coordinate system. For code, run it and check its output. For archives, list the contents. For documents, include every requested section.
+6. Write a first complete version of the deliverable within the first ~20 minutes, even if rough, then improve it in place. Do not spend more than ~20 minutes on source extraction before a deliverable exists.
+7. Before finishing, open every deliverable and verify its exact path, format, and required content.
+8. If a deliverable is an archive, create it with every required member at the stated root early, then replace member contents in place.
+9. If the task asks for a document in a document store or a case-tracking update, use the MCP tools. List the store folders and case projects first, file in the exact folder named in the instruction, and report the store path and case/work-package IDs in the summary.
 
 A reply without a tool call ends the task. Do not send progress notes, next-step notes, or partial thoughts. Only reply when every deliverable exists and has been checked; then give a concise summary of each deliverable, its exact path, and the key results."""
 
@@ -99,6 +100,8 @@ Fix only the material gaps. Preserve correct work; do not rewrite files that alr
 CLOSER = """You are an expert engineer working against a hard deadline in a Linux container. The task instruction and a deterministic check are below. The check shows missing, empty, or invalid deliverables. Write the best possible version of each one now using the data already in the workspace. Do not analyze further or explore. Create every missing path first, then fill it with the best content you can. Reply with one short paragraph naming each file and its status."""
 
 CONTINUATION = """You are continuing an engineering task in a Linux container. The previous turn ended before the work was complete. Your tools act inside it, and bash starts in {workdir}. Read {scratch}/BRIEF.md and {scratch}/plan.md, then inspect the current workspace.
+
+Drawings are images you can see directly through the read tool. Do not build an OCR or glyph-recognition pipeline. Write a first complete version of the deliverable within the next ~20 minutes, then improve it.
 
 Finish every required deliverable. Important: a reply without a tool call ends the task. Do not send progress notes, next-step notes, or partial thoughts. Keep calling tools until every deliverable is written and verified, then reply with a concise summary of each deliverable, its exact path, and the key results."""
 
@@ -377,6 +380,7 @@ async def check(
       {
           "path": item["path"],
           "kind": item.get("kind", "file"),
+          "format": item.get("format", ""),
           "members": item.get("members", []),
           "changed_only": item.get("changed_only", False),
       }
@@ -558,6 +562,9 @@ async def solve(session: taskbridge.Session) -> str:
   final = ""
   deliverables: list[dict[str, Any]] = []
   report: dict[str, Any] = {}
+  skip_continuation = os.environ.get("HARNESS_DISABLE_CONTINUATION") == "1"
+  skip_audit = os.environ.get("HARNESS_DISABLE_AUDIT") == "1"
+  skip_scaffold = os.environ.get("HARNESS_DISABLE_SCAFFOLD") == "1"
   try:
     total = session.time_left()
     await session.log("harness: preflight")
@@ -636,7 +643,7 @@ async def solve(session: taskbridge.Session) -> str:
     # stopped mid-thought, continue the work before spending time on audit.
     for round_no in range(1, 3):
       resume = progress_note(final) or in_flight
-      if blocked or not (resume and missing_count(report) > 0):
+      if skip_continuation or blocked or not (resume and missing_count(report) > 0):
         break
       if in_flight:
         await session.log(
@@ -682,7 +689,7 @@ async def solve(session: taskbridge.Session) -> str:
     # Auditor: independent re-derivation. Skip when the clock is short or the
     # model endpoint is refusing requests.
     left = session.time_left()
-    if not blocked and (left is None or left > 900):
+    if not blocked and not skip_audit and (left is None or left > 900):
       stop, _ = phase_stop(left, AUDIT_SEC, buffer=300)
       audit_prompt = triage.build_audit_prompt(
           session.instruction, SCRATCH, final, report
@@ -750,7 +757,9 @@ async def solve(session: taskbridge.Session) -> str:
 
     # Last-resort deterministic scaffold: a draft at every still-missing path.
     left = session.time_left()
-    if missing_count(report) > 0 and (left is None or left > 30):
+    if not skip_scaffold and missing_count(report) > 0 and (
+        left is None or left > 30
+    ):
       for attempt in range(2):
         if attempt == 0:
           # Remove only files that cannot be repaired in place: empty files and
