@@ -1,70 +1,45 @@
 {
   "format": 1,
   "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
-  "created": "2026-11-21T03:43:56Z",
+  "created": "2026-11-21T21:50:38Z",
   "harness": {
     "name": "ple-forge",
     "model_api": "google-cloud/claude-opus-5-5",
-    "tree": "d3d169134a36f24a0433e929e81c566829f0624d6f86af15bb0aa46a5901d9db",
+    "tree": "bae8687ac3a5cec223ffb01255f040e5a4f7e69a2063d2c150e85243a80975c3",
     "files": {
       ".gitignore": "100644 42d6ecb1e3211e1dd0517ecbc9f7e8ef634547c2",
       "AGENTS.md": "100644 4608473bcec7723934c9b9db008a88bce0e75d2e",
       "LICENSE": "100644 261eeb9e9f8b2b4b0d119366dda99c6fd7d35c64",
       "README.md": "100644 3b3084af1580ff52fd02ddfe6869fd4c25007d53",
-      "check_task.py": "100644 494bfe301185cb68585321415835e7e936d2e522",
-      "harness.py": "100644 276d0ca1cf69564e919e2071721948964d2d5500",
+      "check_task.py": "100644 54d48aaab7691dcbe9dead3f6c9b5e40cfd87728",
+      "harness.py": "100644 7d104969182ce0fad03b7ae5c0d3b86e8c1c94ec",
+      "ocr.py": "100644 a698ed908ac4aec79f95aac4717595dd82fb168c",
       "package-lock.json": "100644 5dba6d2880e4966fca650af70db1c7345d14d20b",
       "package.json": "100644 701346d5e2e0f3fe4eee265d535319c0b8f634c5",
       "preflight_task.py": "100644 f6bf4734021a9b2959f217d0618087b426472995",
-      "requirements.txt": "100644 7bc03d775075fc452cc88d8aa6292087dd8eec65",
+      "requirements.txt": "100644 6feba4f389ea9223bed4fdcefb6e9ef5a7a684ab",
       "scaffold.py": "100644 377a80158477e780c72b71cb1d12ca0f5088bc2f",
       "serve.py": "100644 a0b209c2c38dc8204a48d1eb9e48b123f646707f",
-      "submission.yaml": "100644 5f00210e0fab87bc77242eb4a1e16e6f37a87808",
+      "submission.yaml": "100644 e0189d2af262219cee2ef05efb6286872711e85a",
       "task-tools.ts": "100644 f0f8e7043d3d4c56e8c473b6af0686145706811b",
       "taskbridge.py": "100644 87b326ab2e055f877d6d08468711c1f992e61cc6",
-      "triage.py": "100644 c6fb62c07d5dd1c25602860d15441873c3f9234b"
+      "triage.py": "100644 8c93efecbd908e94c4b7cbc1296b6024593ca86b"
     },
-    "commit": "28b62b6e1f81f12fa640d4ea04ef6d831bb52d92",
+    "commit": "1ddcb795a85d383894c5b027a9448e4d7a8c4390",
     "dirty": false
   },
   "tasks": {
     "data-center-site-model": {
-      "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
-      "run": "ple-forge-20261120-135330",
-      "trial": "data-center-site-model__HUmhacb",
+      "run": "ple-forge-20261121-122250",
+      "trial": "data-center-site-model__3CVkcXG",
       "ended": "ok",
       "reward": 1.0,
-      "tree": "579c4a1a307e134f24c0f1d2c8d90a117abcc0fa4db2d8771e898665463d435b",
-      "files": {
-        "app/files/frontier__DCBim__p6_002/submission/model.ifc": "049ad3858df5a6eec3a5d54934cca4c827472482"
-      },
-      "final_message": "0c315ae79d1d2352f08d38c6d82e9cd06fef211d",
-      "deleted": [],
-      "skipped": []
-    },
-    "foundation-strategy": {
+      "tree": "bae8687ac3a5cec223ffb01255f040e5a4f7e69a2063d2c150e85243a80975c3",
       "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
-      "run": "ple-forge-20261120-175439",
-      "trial": "foundation-strategy__QwQfP2G",
-      "ended": "ok",
-      "reward": 0.806824,
-      "tree": "e3dc4d7eb6b180cb58b48242bc242095315e26a65847ad1f4ad5831d70fbf191",
       "files": {
-        "filesystem/dc_structural__foundation_strategy__blind/output/submission.zip": "1f97edf10e2797525d96bb7183d5e958bf5ae9df"
+        "app/files/frontier__DCBim__p6_002/submission/model.ifc": "1aacee1baee70110f4810c2a7e745ca0b7d3475d"
       },
-      "final_message": "94799c7f79d6b44afa2e7e92fda5c80ac85e20c1",
-      "deleted": [],
-      "skipped": []
-    },
-    "data-hall-mep-routing": {
-      "run": "ple-forge-20261120-212212",
-      "trial": "data-hall-mep-routing__SmyyjHs",
-      "ended": "ok",
-      "reward": 0.0,
-      "tree": "d3d169134a36f24a0433e929e81c566829f0624d6f86af15bb0aa46a5901d9db",
-      "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
-      "files": {},
-      "final_message": "6f71f59001f73215be68e735eb9552355bbd357c",
+      "final_message": "78baa6764356fb6d459d6422b10e6ec1ab174888",
       "deleted": [],
       "skipped": []
     }
